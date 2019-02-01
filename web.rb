@@ -10,7 +10,6 @@ include AuthExtensions::Sudo
 
 MU_ACCOUNT = RDF::Vocabulary.new(MU.to_uri.to_s + 'account/')
 MU_SESSION = RDF::Vocabulary.new(MU.to_uri.to_s + 'session/')
-BESLUIT =  RDF::Vocabulary.new('http://data.vlaanderen.be/ns/besluit#')
 
 ###
 # POST /sessions
@@ -112,10 +111,10 @@ post '/sessions/' do
       },
       group: {
         links: {
-          related: "/bestuurseenheden/#{data['relationships']['group']['data']['id']}"
+          related: "/#{group_type_name}/#{data['relationships']['group']['data']['id']}"
         },
         data: {
-          type: "bestuurseenheden",
+          type: "#{group_type_name}",
           id: data['relationships']['group']['data']['id']
         }
       }
@@ -212,10 +211,10 @@ get '/sessions/current/?' do
       },
       group: {
         links: {
-          related: "/bestuurseenheden/#{session[:group_uuid]}"
+          related: "/#{group_type_name}/#{session[:group_uuid]}"
         },
         data: {
-          type: "bestuurseenheden",
+          type: "#{group_type_name}",
           id: session[:group_uuid]
         }
       }

@@ -1,7 +1,10 @@
 require_relative '/usr/src/app/sinatra_template/utils.rb'
+require_relative '/config/config.rb'
+
 module LoginService
   module SparqlQueries
     include SinatraTemplate::Utils
+    include LoginConfig
     def remove_old_sessions(session)
       query = " DELETE WHERE {"
       query += "   GRAPH <http://mu.semte.ch/graphs/sessions> {"
@@ -41,10 +44,7 @@ module LoginService
       query += "                  <#{MU_EXT.sessionRole}> ?role ;"
       query += "                  <#{MU_EXT.sessionGroup}> ?group ."
       query += "   }"
-      query += "   GRAPH <#{graph}> {"
-      query += "     ?group a <#{BESLUIT.Bestuurseenheid}> ;"
-      query += "            <#{MU_CORE.uuid}> ?group_uuid ."
-      query += "   }"
+      query += "   #{group_filter}"
       query += "   GRAPH ?g {"
       query += "     ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "              <#{MU_CORE.uuid}> ?account_uuid ."
@@ -79,10 +79,7 @@ module LoginService
 
     def select_account(id)
       query =  " SELECT ?uri WHERE {"
-      query += "   GRAPH <#{graph}> {"
-      query += "     ?group a <#{BESLUIT.Bestuurseenheid}> ;"
-      query += "            <#{MU_CORE.uuid}> ?group_uuid ."
-      query += "   }"
+      query += "   #{group_filter}"
       query += "   GRAPH ?g {"
       query += "     ?uri a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "          <#{MU_CORE.uuid}> \"#{id}\" ."
@@ -96,11 +93,10 @@ module LoginService
     end
 
     def select_group(group_id)
+      restricted_filter = group_filter
+      restricted_filter.gsub("?group_uuid", "\"#{group_id}\"")
       query =  " SELECT ?group WHERE {"
-      query += "   GRAPH <#{graph}> {"
-      query += "      ?group a <#{BESLUIT.Bestuurseenheid}> ;"
-      query += "               <#{MU_CORE.uuid}> \"#{group_id}\" ."
-      query += "   }"
+      query += "    #{group_filter}"
       query += " }"
       query(query)
     end
@@ -108,10 +104,7 @@ module LoginService
 
     def select_roles(account_id)
       query =  " SELECT ?role WHERE {"
-      query += "   GRAPH <#{graph}> {"
-      query += "     ?group a <#{BESLUIT.Bestuurseenheid}> ;"
-      query += "            <#{MU_CORE.uuid}> ?group_uuid ."
-      query += "   }"
+      query += "   #{group_filter}"
       query += "   GRAPH ?g {"
       query += "     ?uri a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "            <#{MU_CORE.uuid}> \"#{account_id}\" ;"
