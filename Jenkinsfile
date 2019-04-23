@@ -23,7 +23,7 @@ node {
   try {
 
     stage('Image Build'){
-      imageBuild(CONTAINER_NAME, CONTAINER_TAG, DRC_PATH, branch)
+      imageBuild()
     }
 
   } catch (err) {
@@ -33,7 +33,7 @@ node {
 
 }
 
-def imageBuild(containerName, tag, DRC_PATH, branch){
+def imageBuild(){
     sh "docker build ."
     echo "Image 'mock-login-service' build"
 }
