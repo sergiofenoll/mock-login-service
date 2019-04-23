@@ -17,13 +17,26 @@ node {
   def branch = 'master'
 
   stage('Checkout') {
-    checkout scm
+    def scmVars = checkout scm
+    def git_branch = scmVars.GIT_BRANCH
+
+    if (git_branch == 'origin/development'){
+      branch = 'development'
+    }
   }
 
   try {
 
+    stage("Image Prune"){
+      imagePrune(DRC_PATH, branch)
+    }
+
     stage('Image Build'){
-      imageBuild()
+      imageBuild(branch)
+    }
+
+    stage('Run App'){
+      runApp(branch)
     }
 
   } catch (err) {
@@ -33,8 +46,19 @@ node {
 
 }
 
-def imageBuild(){
-    sh "docker build ."
-    echo "Image 'mock-login-service' build"
+def imagePrune(branch){
+    try {
+        sh "docker-compose -f docker-compose.${branch}.yml down -v"
+        sh "docker-compose -f docker-compose.${branch}.yml rm -f --remove-orphans"
+    } catch(error){}
 }
 
+def imageBuild(branch){
+    sh "docker-compose -f docker-compose.${branch}.yml build"
+    echo "Image build complete"
+}
+
+def runApp(branch){
+    sh "docker-compose -f docker-compose.${branch}.yml up -d --force-recreate"
+    echo "Application started"
+}
