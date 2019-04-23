@@ -28,7 +28,7 @@ node {
   try {
 
     stage("Image Prune"){
-      imagePrune(DRC_PATH, branch)
+      imagePrune(branch)
     }
 
     stage('Image Build'){
