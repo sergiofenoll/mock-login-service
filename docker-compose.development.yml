@@ -15,6 +15,7 @@ services:
       - ./config/mocklogin:/config
   development-login:
     image: lblod/mock-login-service
+    container_name: development-login
 
 networks:
   proxy:
