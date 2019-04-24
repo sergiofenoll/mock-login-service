@@ -15,6 +15,5 @@ module LoginConfig
   def group_type_name
     "account-groups"
   end
-  
+
 end
-    

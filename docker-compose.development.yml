@@ -11,8 +11,6 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: development-mocklogin
-    volumes:
-      - ./config/mocklogin:/config
   development-login:
     image: lblod/mock-login-service
     container_name: development-login
