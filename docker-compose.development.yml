@@ -13,11 +13,21 @@ services:
     container_name: development-mocklogin
     ports:
       - "9999:80"
+    networks:
+      - proxy
+      - default
+      - backend
   development-login:
     image: lblod/mock-login-service
     container_name: development-login
     ports:
       - "9998:80"
+    networks:
+      - proxy
+      - default
+      - backend
+
+
 networks:
   proxy:
     external:
