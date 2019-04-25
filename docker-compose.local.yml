@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  mocklogin:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: mocklogin
+    volumes:
+      - ./config/mocklogin:/config
+  login:
+    image: lblod/mock-login-service
