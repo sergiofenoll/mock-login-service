@@ -11,10 +11,25 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: mocklogin
-    volumes:
-      - ./config/mocklogin:/config
+    ports:
+      - "8888:80"
+    networks:
+      - proxy
+      - default
+      - backend
+    external_links:
+      - database:database
   login:
     image: lblod/mock-login-service
+    container_name: login
+    ports:
+      - "8887:80"
+    networks:
+      - proxy
+      - default
+      - backend
+    external_links:
+      - database:database
 
 networks:
   proxy:
