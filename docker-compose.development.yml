@@ -11,6 +11,8 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: development-mocklogin
+    ports:
+      - "9999:80"
     networks:
       - proxy
       - default
@@ -20,6 +22,8 @@ services:
   development-login:
     image: lblod/mock-login-service
     container_name: development-login
+    ports:
+      - "9998:80"
     networks:
       - proxy
       - default
