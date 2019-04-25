@@ -17,6 +17,8 @@ services:
       - proxy
       - default
       - backend
+    external_links:
+      - development-database:database
   development-login:
     image: lblod/mock-login-service
     container_name: development-login
@@ -26,7 +28,8 @@ services:
       - proxy
       - default
       - backend
-
+    external_links:
+      - development-database:database
 
 networks:
   proxy:
