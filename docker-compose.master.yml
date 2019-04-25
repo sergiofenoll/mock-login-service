@@ -18,7 +18,7 @@ services:
       - default
       - backend
     external_links:
-      - database:database
+      - db:database
   login:
     image: lblod/mock-login-service
     container_name: login
@@ -29,7 +29,7 @@ services:
       - default
       - backend
     external_links:
-      - database:database
+      - db:database
 
 networks:
   proxy:
