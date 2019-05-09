@@ -49,7 +49,7 @@ module LoginService
       query += "     ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "              <#{MU_CORE.uuid}> ?account_uuid ."
       query += "   }"
-      query += "   FILTER(?g = IRI(CONCAT(\"http://mu.semte.ch/graphs/organizations/\", ?group_uuid)))"
+      query += "   "
       query += " } GROUP BY ?session_uuid ?group_uuid ?account_uuid ?account"
       query(query)
     end
