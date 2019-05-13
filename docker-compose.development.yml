@@ -19,17 +19,6 @@ services:
       - backend
     external_links:
       - development-database:database
-  development-login:
-    image: lblod/mock-login-service
-    container_name: development-login
-    ports:
-      - "9998:80"
-    networks:
-      - proxy
-      - default
-      - backend
-    external_links:
-      - development-database:database
 
 networks:
   proxy:
