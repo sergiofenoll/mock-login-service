@@ -94,9 +94,9 @@ module LoginService
 
     def select_group(group_id)
       restricted_filter = group_filter
-      restricted_filter.gsub("?group_uuid", "\"#{group_id}\"")
+      restricted_filter = restricted_filter.gsub("?group_uuid", "\"#{group_id}\"")
       query =  " SELECT ?group WHERE {"
-      query += "    #{group_filter}"
+      query += "    #{restricted_filter}"
       query += " }"
       query(query)
     end
