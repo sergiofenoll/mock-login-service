@@ -13,7 +13,7 @@ module LoginService
       query += "                  <#{MU_EXT.sessionMembership}> ?membership ."
       query += "   }"
       query += " }"
-      update(query)
+      Mu::AuthSudo.update(query)
     end
 
     def insert_new_session_for_account(account, session_uri, session_id, membership_uri)
@@ -28,7 +28,7 @@ module LoginService
       query += "                      <#{MU_CORE.uuid}> #{session_id.sparql_escape} ."
       query += "   }"
       query += " }"
-      update(query)
+      Mu::AuthSudo.update(query)
     end
 
     def select_account_by_session(session)
@@ -45,7 +45,7 @@ module LoginService
       query += "              <#{MU_CORE.uuid}> ?membership_id ."
       query += "   }"
       query += " } LIMIT 1"
-      query(query)
+      Mu::AuthSudo.query(query)
     end
 
     def select_current_session(account)
@@ -55,7 +55,7 @@ module LoginService
       query += "        <#{MU_CORE.uuid}> ?id . "
       query += "   }"
       query += " } LIMIT 1"
-      query(query)
+      Mu::AuthSudo.query(query)
     end
 
     def delete_current_session(account)
@@ -67,7 +67,7 @@ module LoginService
       query += "              <#{MU_EXT.sessionMembership}> ?membership ."
       query += "   }"
       query += " }"
-      update(query)
+      Mu::AuthSudo.update(query)
     end
 
     def select_account_and_membership(account_id)
@@ -80,7 +80,7 @@ module LoginService
       query += "          <#{MU_CORE.uuid}> ?membership_id ."
       query += "   }"
       query += " } LIMIT 1"
-      query(query)
+      Mu::AuthSudo.query(query)
     end
   end
 end
