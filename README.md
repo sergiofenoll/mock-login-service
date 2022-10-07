@@ -1,49 +1,49 @@
 # Mock Login microservice
 This is a login microservice running on [mu.semte.ch](http://mu.semte.ch). The microservice provides the necessary endpoints to link the current session to a provided user and group.
 
-## Integrate login service in a mu.semte.ch project
-Add the following snippet to your `docker-compose.yml` to include the login service in your project.
+## Getting started
+### Add the mock-login service to your stack
+Add the following snippet to your `docker-compose.yml`:
 
 ```
-login:
-  image: lblod/mock-login-service
+mock-login:
+  image: kanselarij-vlaanderen/mock-login-service
 ```
 
-Add rules to the `dispatcher.ex` to dispatch requests to the login service. E.g. 
+Add rules to the `dispatcher.ex` to dispatch requests to the mock-login service:
 
 ```
-  match "/sessions/*path" do
-    Proxy.forward conn, path, "http://login/sessions/"
+  match "/mock/sessions/*path", %{ accept: [ :json ] } do
+    Proxy.forward conn, path, "http://mock-login/sessions/"
   end
 ```
-The host `login` in the forward URL reflects the name of the login service in the `docker-compose.yml` file as defined above.
 
-More information how to setup a mu.semte.ch project can be found in [mu-project](https://github.com/mu-semtech/mu-project).
+Add a migration that populates the triplestore with mock-accounts according to the authentication model.
 
 
-## Available requests
+## Reference
+
+### Model
+
+The data model is described in the [kaleidos-documentation repository](https://github.com/kanselarij-vlaanderen/kaleidos-documentation/blob/master/data-model/authentication.md).
+
+### API
 
 #### POST /sessions
-Log in, i.e. create a new session for an account specified by its nickname and password.
+Log in, i.e. create a new session for a mock-account
 
 ##### Request body
 ```javascript
 data: {
+   type: "sessions",
    relationships: {
      account:{
        data: {
-         id: "account_id",
+         id: "8e38fb90-f15c-47e9-8d74-024a3112dd28",
          type: "accounts"
        }
-     },
-     group:{
-       data: {
-         id: "group_id",
-         type: "groups"
-       }
-     }, 
-   },
-   type: "sessions"
+     }
+   }
 }
 ```
 
@@ -59,24 +59,24 @@ On successful login with the newly created session in the response body:
   "data": {
     "type": "sessions",
     "id": "b178ba66-206e-4551-b41e-4a46983912c0"
-  },
-  "relationships": {
-    "account": {
-      "links": {
-        "related": "/accounts/f6419af0-c90f-465f-9333-e993c43e6cf2"
+    "relationships": {
+      "account": {
+        "links": {
+          "related": "/accounts/8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        },
+        "data": {
+          "type": "accounts",
+          "id": "8e38fb90-f15c-47e9-8d74-024a3112dd28"
+        }
       },
-      "data": {
-        "type": "accounts",
-        "id": "f6419af0-c90f-465f-9333-e993c43e6cf2"
-      }
-    },
-    "group": {
-      "links": {
-        "related": "/groups/f6419af0-c60f-465f-9333-e993c43e6ch5"
-      },
-      "data": {
-        "type": "groups",
-        "id": "f6419af0-c60f-465f-9333-e993c43e6ch5"
+      "membership": {
+        "links": {
+          "related": "/memberships/3ba43eea-28f4-4386-bc26-2476baeb8425"
+        },
+        "data": {
+          "type": "memberships",
+          "id": "3ba43eea-28f4-4386-bc26-2476baeb8425"
+        }
       }
     }
   }
@@ -85,7 +85,7 @@ On successful login with the newly created session in the response body:
 
 ###### 400 Bad Request
 - if session header is missing. The header should be automatically set by the [identifier](https://github.com/mu-semtech/mu-identifier).
-- if the group or account doesn't exist
+- if the account doesn't exist
 
 
 #### DELETE /sessions/current

@@ -1,8 +1,5 @@
+require 'mu/auth-sudo'
 require_relative 'login_service/sparql_queries.rb'
-
-## Monkeypatch sparql-client with mu-auth-sudo header
-require_relative 'auth_extensions/sudo'
-include AuthExtensions::Sudo
 
 ###
 # Vocabularies
@@ -10,6 +7,9 @@ include AuthExtensions::Sudo
 
 MU_ACCOUNT = RDF::Vocabulary.new(MU.to_uri.to_s + 'account/')
 MU_SESSION = RDF::Vocabulary.new(MU.to_uri.to_s + 'session/')
+ORG = RDF::Vocabulary.new('http://www.w3.org/ns/org#')
+MOCK_ACCOUNT_GRAPH = 'http://mu.semte.ch/graphs/public'
+SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions'
 
 ###
 # POST /sessions
@@ -54,26 +54,18 @@ post '/sessions/' do
 
   validate_resource_type('sessions', data)
   error('Id paramater is not allowed', 400) if not data['id'].nil?
-  error('exactly one account should be linked') unless data.dig("relationships","account", "data", "id")
-  error('exactly one group should be linked') unless data.dig("relationships","group", "data", "id")
-
+  error('exactly one account should be linked') unless data.dig("relationships", "account", "data", "id")
 
   ###
   # Validate login
   ###
 
-  result = select_account(data["relationships"]["account"]["data"]["id"])
+  account_id = data['relationships']['account']['data']['id']
+  result = select_account_and_membership(account_id)
   error('account not found.', 400) if result.empty?
-  account = result.first
-
-  group_id = data["relationships"]["group"]["data"]["id"]
-  result = select_group(group_id)
-  error('group not found', 400) if result.empty?
-  group = result.first
-
-  result = select_roles(data["relationships"]["account"]["data"]["id"])
-  error('roles not found', 400) if result.empty?
-  roles = result.map { |r| r[:role].to_s }
+  account_uri = result.first[:account].to_s
+  membership_uri = result.first[:membership].to_s
+  membership_id = result.first[:membership_id].to_s
 
   ###
   # Remove old sessions
@@ -84,7 +76,7 @@ post '/sessions/' do
   # Insert new session
   ###
   session_id = generate_uuid()
-  insert_new_session_for_account(account[:uri].to_s, session_uri, session_id, group[:group].to_s, group_id, roles)
+  insert_new_session_for_account(account_uri, session_uri, session_id, membership_uri)
 
   status 201
   headers['mu-auth-allowed-groups'] = 'CLEAR'
@@ -95,27 +87,24 @@ post '/sessions/' do
     data: {
       type: 'sessions',
       id: session_id,
-      attributes: {
-        roles: roles
-      }
-    },
-    relationships: {
-      account: {
-        links: {
-          related: "/accounts/#{data['relationships']['account']['data']['id']}"
+      relationships: {
+        account: {
+          links: {
+            related: "/accounts/#{account_id}"
+          },
+          data: {
+            type: "accounts",
+            id: account_id
+          }
         },
-        data: {
-          type: "accounts",
-          id: data['relationships']['account']['data']['id']
-        }
-      },
-      group: {
-        links: {
-          related: "/#{group_type_name}/#{data['relationships']['group']['data']['id']}"
-        },
-        data: {
-          type: "#{group_type_name}",
-          id: data['relationships']['group']['data']['id']
+        membership: {
+          links: {
+            related: "/memberships/#{membership_id}"
+          },
+          data: {
+            type: "memberships",
+            id: membership_id
+          }
         }
       }
     }
@@ -146,14 +135,14 @@ delete '/sessions/current/?' do
 
   result = select_account_by_session(session_uri)
   error('Invalid session') if result.empty?
-  account = result.first[:account].to_s
+  account_uri = result.first[:account_uri].to_s
 
 
   ###
   # Remove session
   ###
 
-  delete_current_session(account)
+  delete_current_session(account_uri)
 
   status 204
   headers['mu-auth-allowed-groups'] = 'CLEAR'
@@ -183,7 +172,9 @@ get '/sessions/current/?' do
 
   result = select_account_by_session(session_uri)
   error('Invalid session') if result.empty?
-  session = result.first
+  session_id = result.first[:session_id]
+  account_id = result.first[:account_id]
+  membership_id = result.first[:membership_id]
 
   rewrite_url = rewrite_url_header(request)
 
@@ -194,28 +185,25 @@ get '/sessions/current/?' do
     },
     data: {
       type: 'sessions',
-      id: session[:session_uuid],
-      attributes: {
-        roles: session[:roles].to_s.split(',')
-      }
-    },
-    relationships: {
-      account: {
-        links: {
-          related: "/accounts/#{session[:account_uuid]}"
+      id: session_id,
+      relationships: {
+        account: {
+          links: {
+            related: "/accounts/#{account_id}"
+          },
+          data: {
+            type: "accounts",
+            id: account_id
+          }
         },
-        data: {
-          type: "accounts",
-          id: session[:account_uuid]
-        }
-      },
-      group: {
-        links: {
-          related: "/#{group_type_name}/#{session[:group_uuid]}"
-        },
-        data: {
-          type: "#{group_type_name}",
-          id: session[:group_uuid]
+        membership: {
+          links: {
+            related: "/memberships/#{membership_id}"
+          },
+          data: {
+            type: "memberships",
+            id: membership_id
+          }
         }
       }
     }
