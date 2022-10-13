@@ -8,8 +8,16 @@ require_relative 'login_service/sparql_queries.rb'
 MU_ACCOUNT = RDF::Vocabulary.new(MU.to_uri.to_s + 'account/')
 MU_SESSION = RDF::Vocabulary.new(MU.to_uri.to_s + 'session/')
 ORG = RDF::Vocabulary.new('http://www.w3.org/ns/org#')
+ADMS = RDF::Vocabulary.new('http://www.w3.org/ns/adms#')
 MOCK_ACCOUNT_GRAPH = 'http://mu.semte.ch/graphs/public'
+SYSTEM_USERS_GRAPH = "http://mu.semte.ch/graphs/system/users"
 SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions'
+
+###
+# Constants
+###
+
+BLOCKED_STATUS = 'http://themis.vlaanderen.be/id/concept/ffd0d21a-3beb-44c4-b3ff-06fe9561282a'
 
 ###
 # POST /sessions
@@ -61,11 +69,24 @@ post '/sessions/' do
   ###
 
   account_id = data['relationships']['account']['data']['id']
-  result = select_account_and_membership(account_id)
-  error('account not found.', 400) if result.empty?
+  result = select_user_and_account(account_id)
+  error("account not found.", 400) if result.empty?
+
   account_uri = result.first[:account].to_s
+  person_uri = result.first[:person].to_s
+  person_status = result.first[:status].to_s
+  error("user is blocked.", 400) if person_status == BLOCKED_STATUS
+
+  result = select_membership(person_uri)
+  error("membership not found.", 400) if result.empty?
   membership_uri = result.first[:membership].to_s
   membership_id = result.first[:membership_id].to_s
+  membership_status = result.first[:status].to_s
+  error("membership is blocked.", 400) if membership_status == BLOCKED_STATUS
+
+  result = select_organization(membership_uri)
+  organization_status = result.first[:status].to_s
+  error("organization is blocked.", 400) if organization_status == BLOCKED_STATUS
 
   ###
   # Remove old sessions

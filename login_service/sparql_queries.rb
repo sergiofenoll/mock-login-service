@@ -70,15 +70,41 @@ module LoginService
       Mu::AuthSudo.update(query)
     end
 
-    def select_account_and_membership(account_id)
-      query =  " SELECT ?account ?membership ?membership_id WHERE {"
+    def select_user_and_account(account_id)
+      query =  " SELECT ?account ?person ?status WHERE {"
       query += "   GRAPH <#{MOCK_ACCOUNT_GRAPH}> {"
       query += "     ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "          <#{MU_CORE.uuid}> #{account_id.sparql_escape} ."
       query += "     ?person <#{RDF::Vocab::FOAF.account}> ?account ."
-      query += "     ?membership <#{ORG.member}> ?person ; "
+      query += "   }"
+      query += "   OPTIONAL { GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?person <#{ADMS.status}> ?status ."
+      query += "   }}"
+      query += " } LIMIT 1"
+      Mu::AuthSudo.query(query)
+    end
+
+    def select_membership(user)
+      query =  " SELECT ?membership ?membership_id ?status WHERE {"
+      query += "   GRAPH <#{MOCK_ACCOUNT_GRAPH}> {"
+      query += "     ?membership <#{ORG.member}> <#{user}> ; "
       query += "          <#{MU_CORE.uuid}> ?membership_id ."
       query += "   }"
+      query += "   OPTIONAL { GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?membership <#{ADMS.status}> ?status ."
+      query += "   }}"
+      query += " } LIMIT 1"
+      Mu::AuthSudo.query(query)
+    end
+
+    def select_organization(membership)
+      query =  " SELECT ?status WHERE {"
+      query += "   GRAPH <#{MOCK_ACCOUNT_GRAPH}> {"
+      query += "     <#{membership}> <#{ORG.organization}> ?organization ."
+      query += "   }"
+      query += "   OPTIONAL { GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?organization <#{ADMS.status}> ?status ."
+      query += "   }}"
       query += " } LIMIT 1"
       Mu::AuthSudo.query(query)
     end
