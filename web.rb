@@ -75,18 +75,22 @@ post '/sessions/' do
   account_uri = result.first[:account].to_s
   person_uri = result.first[:person].to_s
   person_status = result.first[:status].to_s
-  error("user is blocked.", 400) if person_status == BLOCKED_STATUS
+  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
 
   result = select_membership(person_uri)
   error("membership not found.", 400) if result.empty?
+
   membership_uri = result.first[:membership].to_s
   membership_id = result.first[:membership_id].to_s
   membership_status = result.first[:status].to_s
-  error("membership is blocked.", 400) if membership_status == BLOCKED_STATUS
+  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   result = select_organization(membership_uri)
   organization_status = result.first[:status].to_s
-  error("organization is blocked.", 400) if organization_status == BLOCKED_STATUS
+  if organization_status == BLOCKED_STATUS
+    insert_membership_block(membership_uri)
+    error("This organization is blocked.", 403) if organization_status == BLOCKED_STATUS
+  end
 
   ###
   # Remove old sessions
@@ -193,9 +197,25 @@ get '/sessions/current/?' do
 
   result = select_account_by_session(session_uri)
   error('Invalid session') if result.empty?
+
   session_id = result.first[:session_id]
   account_id = result.first[:account_id]
   membership_id = result.first[:membership_id]
+
+  ###
+  # Check blocked status
+  ###
+
+  person_status = result.first[:person_status]
+  membership_status = result.first[:membership_status]
+  organization_status = result.first[:organization_status]
+
+  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
+  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
+  if organization_status == BLOCKED_STATUS
+    insert_membership_block(membership_uri)
+    error("This organization is blocked.", 403) if organization_status == BLOCKED_STATUS
+  end
 
   rewrite_url = rewrite_url_header(request)
 
