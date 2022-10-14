@@ -69,28 +69,23 @@ post '/sessions/' do
   ###
 
   account_id = data['relationships']['account']['data']['id']
-  result = select_user_and_account(account_id)
+  result = select_login_data(account_id)
   error("account not found.", 400) if result.empty?
 
   account_uri = result.first[:account].to_s
-  person_uri = result.first[:person].to_s
-  person_status = result.first[:status].to_s
-  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
-
-  result = select_membership(person_uri)
-  error("membership not found.", 400) if result.empty?
-
   membership_uri = result.first[:membership].to_s
   membership_id = result.first[:membership_id].to_s
-  membership_status = result.first[:status].to_s
-  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
-  result = select_organization(membership_uri)
-  organization_status = result.first[:status].to_s
+  person_status = result.first[:status].to_s
+  organization_status = result.first[:organization_status].to_s
+  membership_status = result.first[:status].to_s
+
+  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
   if organization_status == BLOCKED_STATUS
     insert_membership_block(membership_uri)
     error("This organization is blocked.", 403) if organization_status == BLOCKED_STATUS
   end
+  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   ###
   # Remove old sessions
