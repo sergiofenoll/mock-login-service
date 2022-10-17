@@ -31,8 +31,50 @@ module LoginService
       Mu::AuthSudo.update(query)
     end
 
+    def insert_login_activity(user)
+      now = DateTime.now
+
+      query = %(
+      SELECT ?login_activity
+      WHERE {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          ?login_activity a <#{MU_EXT.LoginActivity}> ;
+            <#{PROV.wasAssociatedWith}> <#{user}> .
+        }
+      }
+      LIMIT 1)
+
+      result = Mu::AuthSudo.query(query)
+      unless result.empty?
+        login_activity = result.first[:login_activity].to_s
+
+        # Delete old login activity
+        query = %(
+        DELETE WHERE {
+          GRAPH <#{SYSTEM_USERS_GRAPH}> {
+            <#{login_activity}> ?p ?o .
+          }
+        })
+        Mu::AuthSudo.update(query)
+      end
+
+      uuid = generate_uuid
+      query = %(
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+      INSERT DATA {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          <#{LOGIN_ACTIVITY_RESOURCE_BASE}#{uuid}> a <#{MU_EXT.LoginActivity}> ;
+            <#{MU_CORE.uuid}> #{uuid.sparql_escape} ;
+            <#{PROV.wasAssociatedWith}> <#{user}> ;
+            <#{PROV.startedAtTime}> #{now.sparql_escape} .
+        }
+      })
+      Mu::AuthSudo.update(query)
+    end
+
     def select_account_by_session(session)
-      query =  " SELECT ?session_id ?account_uri ?account_id ?person_status ?membership_id ?membership_status ?organization_status WHERE {"
+      query =  " SELECT ?session_id ?account_uri ?account_id ?person_uri ?person_status ?membership_id ?membership_status ?organization_status WHERE {"
       query += "   GRAPH <#{SESSIONS_GRAPH}> {"
       query += "     <#{session}> <#{MU_CORE.uuid}> ?session_id;"
       query += "                  <#{MU_SESSION.account}> ?account_uri ;"

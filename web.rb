@@ -9,9 +9,13 @@ MU_ACCOUNT = RDF::Vocabulary.new(MU.to_uri.to_s + 'account/')
 MU_SESSION = RDF::Vocabulary.new(MU.to_uri.to_s + 'session/')
 ORG = RDF::Vocabulary.new('http://www.w3.org/ns/org#')
 ADMS = RDF::Vocabulary.new('http://www.w3.org/ns/adms#')
+PROV = RDF::Vocabulary.new("http://www.w3.org/ns/prov#")
+
 MOCK_ACCOUNT_GRAPH = 'http://mu.semte.ch/graphs/public'
 SYSTEM_USERS_GRAPH = "http://mu.semte.ch/graphs/system/users"
 SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions'
+
+LOGIN_ACTIVITY_RESOURCE_BASE = "http://themis.vlaanderen.be/id/aanmeldingsactiviteit/"
 
 ###
 # Constants
@@ -73,6 +77,7 @@ post '/sessions/' do
   error("account not found.", 400) if result.empty?
 
   account_uri = result.first[:account].to_s
+  person_uri = result.first[:person]
   membership_uri = result.first[:membership].to_s
   membership_id = result.first[:membership_id].to_s
 
@@ -97,6 +102,11 @@ post '/sessions/' do
   ###
   session_id = generate_uuid()
   insert_new_session_for_account(account_uri, session_uri, session_id, membership_uri)
+
+  ###
+  # Insert new login activity
+  ###
+  insert_login_activity(person_uri)
 
   status 201
   headers['mu-auth-allowed-groups'] = 'CLEAR'
@@ -195,6 +205,7 @@ get '/sessions/current/?' do
 
   session_id = result.first[:session_id]
   account_id = result.first[:account_id]
+  person_uri = result.first[:person_uri]
   membership_id = result.first[:membership_id]
 
   ###
@@ -211,6 +222,12 @@ get '/sessions/current/?' do
     insert_membership_block(membership_uri)
     error("This organization is blocked.", 403) if organization_status == BLOCKED_STATUS
   end
+
+  ###
+  # Insert new login activity
+  ###
+
+  insert_login_activity(person_uri)
 
   rewrite_url = rewrite_url_header(request)
 
