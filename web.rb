@@ -206,10 +206,7 @@ get '/sessions/current/?' do
   organization_status = result.first[:organization_status]
 
   error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
-  if organization_status == BLOCKED_STATUS
-    insert_membership_block(membership_uri)
-    error("This organization is blocked.", 403)
-  end
+  error("This organization is blocked.", 403) if organization_status == BLOCKED_STATUS
   error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   rewrite_url = rewrite_url_header(request)
