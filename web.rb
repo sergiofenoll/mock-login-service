@@ -8,8 +8,16 @@ require_relative 'login_service/sparql_queries.rb'
 MU_ACCOUNT = RDF::Vocabulary.new(MU.to_uri.to_s + 'account/')
 MU_SESSION = RDF::Vocabulary.new(MU.to_uri.to_s + 'session/')
 ORG = RDF::Vocabulary.new('http://www.w3.org/ns/org#')
+ADMS = RDF::Vocabulary.new('http://www.w3.org/ns/adms#')
 MOCK_ACCOUNT_GRAPH = 'http://mu.semte.ch/graphs/public'
+SYSTEM_USERS_GRAPH = "http://mu.semte.ch/graphs/system/users"
 SESSIONS_GRAPH = 'http://mu.semte.ch/graphs/sessions'
+
+###
+# Constants
+###
+
+BLOCKED_STATUS = 'http://themis.vlaanderen.be/id/concept/ffd0d21a-3beb-44c4-b3ff-06fe9561282a'
 
 ###
 # POST /sessions
@@ -61,11 +69,23 @@ post '/sessions/' do
   ###
 
   account_id = data['relationships']['account']['data']['id']
-  result = select_account_and_membership(account_id)
-  error('account not found.', 400) if result.empty?
+  result = select_login_data(account_id)
+  error("account not found.", 400) if result.empty?
+
   account_uri = result.first[:account].to_s
   membership_uri = result.first[:membership].to_s
   membership_id = result.first[:membership_id].to_s
+
+  person_status = result.first[:person_status].to_s
+  organization_status = result.first[:organization_status].to_s
+  membership_status = result.first[:membership_status].to_s
+
+  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
+  if organization_status == BLOCKED_STATUS
+    insert_membership_block(membership_uri)
+    error("This organization is blocked.", 403)
+  end
+  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   ###
   # Remove old sessions
@@ -172,9 +192,25 @@ get '/sessions/current/?' do
 
   result = select_account_by_session(session_uri)
   error('Invalid session') if result.empty?
+
   session_id = result.first[:session_id]
   account_id = result.first[:account_id]
   membership_id = result.first[:membership_id]
+
+  ###
+  # Check blocked status
+  ###
+
+  person_status = result.first[:person_status]
+  membership_status = result.first[:membership_status]
+  organization_status = result.first[:organization_status]
+
+  error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
+  if organization_status == BLOCKED_STATUS
+    insert_membership_block(membership_uri)
+    error("This organization is blocked.", 403)
+  end
+  error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   rewrite_url = rewrite_url_header(request)
 

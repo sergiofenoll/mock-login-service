@@ -32,7 +32,7 @@ module LoginService
     end
 
     def select_account_by_session(session)
-      query =  " SELECT ?session_id ?account_uri ?account_id ?membership_id WHERE {"
+      query =  " SELECT ?session_id ?account_uri ?account_id ?person_status ?membership_id ?membership_status ?organization_status WHERE {"
       query += "   GRAPH <#{SESSIONS_GRAPH}> {"
       query += "     <#{session}> <#{MU_CORE.uuid}> ?session_id;"
       query += "                  <#{MU_SESSION.account}> ?account_uri ;"
@@ -42,7 +42,14 @@ module LoginService
       query += "     ?account_uri a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
       query += "              <#{MU_CORE.uuid}> ?account_id ."
       query += "     ?membership_uri a <#{ORG.Membership}> ;"
+      query += "              <#{ORG.member}> ?person_uri ;"
+      query += "              <#{ORG.organization}> ?organization_uri ;"
       query += "              <#{MU_CORE.uuid}> ?membership_id ."
+      query += "   }"
+      query += "   GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?person_uri <#{ADMS.status}> ?person_status ."
+      query += "     ?organization_uri <#{ADMS.status}> ?organization_status ."
+      query += "     ?membership_uri <#{ADMS.status}> ?membership_status ."
       query += "   }"
       query += " } LIMIT 1"
       Mu::AuthSudo.query(query)
@@ -70,17 +77,66 @@ module LoginService
       Mu::AuthSudo.update(query)
     end
 
-    def select_account_and_membership(account_id)
-      query =  " SELECT ?account ?membership ?membership_id WHERE {"
+    def select_login_data(account_id)
+      query = %(
+      SELECT ?account ?person ?person_id ?person_status ?organization ?organization_id ?organization_status ?membership ?membership_id ?membership_status
+      WHERE {
+        GRAPH <#{MOCK_ACCOUNT_GRAPH}> {
+          ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;
+            <#{MU_CORE.uuid}> #{account_id.sparql_escape} .
+          ?person <#{RDF::Vocab::FOAF.account}> ?account .
+          ?membership <#{ORG.member}> ?person ;
+            <#{ORG.organization}> ?organization .
+        }
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          ?person <#{ADMS.status}> ?person_status .
+          ?organization <#{ADMS.status}> ?organization_status .
+          ?membership <#{ADMS.status}> ?membership_status .
+        }
+      } LIMIT 1)
+      Mu::AuthSudo.query(query)
+    end
+
+    def select_membership(user)
+      query =  " SELECT ?membership ?membership_id ?status WHERE {"
       query += "   GRAPH <#{MOCK_ACCOUNT_GRAPH}> {"
-      query += "     ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;"
-      query += "          <#{MU_CORE.uuid}> #{account_id.sparql_escape} ."
-      query += "     ?person <#{RDF::Vocab::FOAF.account}> ?account ."
-      query += "     ?membership <#{ORG.member}> ?person ; "
+      query += "     ?membership <#{ORG.member}> <#{user}> ; "
       query += "          <#{MU_CORE.uuid}> ?membership_id ."
+      query += "   }"
+      query += "   GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?membership <#{ADMS.status}> ?status ."
       query += "   }"
       query += " } LIMIT 1"
       Mu::AuthSudo.query(query)
+    end
+
+    def select_organization(membership)
+      query =  " SELECT ?status WHERE {"
+      query += "   GRAPH <#{MOCK_ACCOUNT_GRAPH}> {"
+      query += "     <#{membership}> <#{ORG.organization}> ?organization ."
+      query += "   }"
+      query += "   GRAPH <#{SYSTEM_USERS_GRAPH}> {"
+      query += "     ?organization <#{ADMS.status}> ?status ."
+      query += "   }"
+      query += " } LIMIT 1"
+      Mu::AuthSudo.query(query)
+    end
+
+    def insert_membership_block(membership)
+      query = %(
+      DELETE WHERE {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          <#{membership}> <#{ADMS.status}> ?status .
+        }
+      })
+      Mu::AuthSudo.update(query)
+      query = %(
+      INSERT DATA {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          <#{membership}> <#{ADMS.status}> <#{BLOCKED_STATUS}> .
+        }
+      })
+      Mu::AuthSudo.update(query)
     end
   end
 end
