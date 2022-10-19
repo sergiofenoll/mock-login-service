@@ -77,14 +77,9 @@ post '/sessions/' do
   membership_id = result.first[:membership_id].to_s
 
   person_status = result.first[:person_status].to_s
-  organization_status = result.first[:organization_status].to_s
   membership_status = result.first[:membership_status].to_s
 
   error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
-  if organization_status == BLOCKED_STATUS
-    insert_membership_block(membership_uri)
-    error("This organization is blocked.", 403)
-  end
   error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   ###
@@ -203,13 +198,8 @@ get '/sessions/current/?' do
 
   person_status = result.first[:person_status]
   membership_status = result.first[:membership_status]
-  organization_status = result.first[:organization_status]
 
   error("This user is blocked.", 403) if person_status == BLOCKED_STATUS
-  if organization_status == BLOCKED_STATUS
-    insert_membership_block(membership_uri)
-    error("This organization is blocked.", 403)
-  end
   error("This membership is blocked.", 403) if membership_status == BLOCKED_STATUS
 
   rewrite_url = rewrite_url_header(request)

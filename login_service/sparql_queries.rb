@@ -32,7 +32,7 @@ module LoginService
     end
 
     def select_account_by_session(session)
-      query =  " SELECT ?session_id ?account_uri ?account_id ?person_status ?membership_id ?membership_status ?organization_status WHERE {"
+      query =  " SELECT ?session_id ?account_uri ?account_id ?person_status ?membership_id ?membership_status WHERE {"
       query += "   GRAPH <#{SESSIONS_GRAPH}> {"
       query += "     <#{session}> <#{MU_CORE.uuid}> ?session_id;"
       query += "                  <#{MU_SESSION.account}> ?account_uri ;"
@@ -43,12 +43,10 @@ module LoginService
       query += "              <#{MU_CORE.uuid}> ?account_id ."
       query += "     ?membership_uri a <#{ORG.Membership}> ;"
       query += "              <#{ORG.member}> ?person_uri ;"
-      query += "              <#{ORG.organization}> ?organization_uri ;"
       query += "              <#{MU_CORE.uuid}> ?membership_id ."
       query += "   }"
       query += "   GRAPH <#{SYSTEM_USERS_GRAPH}> {"
       query += "     ?person_uri <#{ADMS.status}> ?person_status ."
-      query += "     ?organization_uri <#{ADMS.status}> ?organization_status ."
       query += "     ?membership_uri <#{ADMS.status}> ?membership_status ."
       query += "   }"
       query += " } LIMIT 1"
@@ -79,7 +77,7 @@ module LoginService
 
     def select_login_data(account_id)
       query = %(
-      SELECT ?account ?person ?person_id ?person_status ?organization ?organization_id ?organization_status ?membership ?membership_id ?membership_status
+      SELECT ?account ?person ?person_id ?person_status ?organization ?organization_id ?membership ?membership_id ?membership_status
       WHERE {
         GRAPH <#{MOCK_ACCOUNT_GRAPH}> {
           ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;
@@ -90,7 +88,6 @@ module LoginService
         }
         GRAPH <#{SYSTEM_USERS_GRAPH}> {
           ?person <#{ADMS.status}> ?person_status .
-          ?organization <#{ADMS.status}> ?organization_status .
           ?membership <#{ADMS.status}> ?membership_status .
         }
       } LIMIT 1)
