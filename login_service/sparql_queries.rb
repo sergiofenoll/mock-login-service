@@ -124,8 +124,10 @@ module LoginService
         GRAPH <#{MOCK_ACCOUNT_GRAPH}> {
           ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;
             <#{MU_CORE.uuid}> #{account_id.sparql_escape} .
-          ?person <#{RDF::Vocab::FOAF.account}> ?account .
+          ?person <#{RDF::Vocab::FOAF.account}> ?account ;
+            <#{MU_CORE.uuid}> ?person_id .
           ?membership <#{ORG.member}> ?person ;
+            <#{MU_CORE.uuid}> ?membership_id ;
             <#{ORG.organization}> ?organization .
         }
         GRAPH <#{SYSTEM_USERS_GRAPH}> {
