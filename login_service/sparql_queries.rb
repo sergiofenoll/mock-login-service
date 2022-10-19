@@ -119,16 +119,14 @@ module LoginService
 
     def select_login_data(account_id)
       query = %(
-      SELECT ?account ?person ?person_id ?person_status ?organization ?organization_id ?membership ?membership_id ?membership_status
+      SELECT ?account ?person ?person_status ?membership ?membership_id ?membership_status
       WHERE {
         GRAPH <#{MOCK_ACCOUNT_GRAPH}> {
           ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;
             <#{MU_CORE.uuid}> #{account_id.sparql_escape} .
-          ?person <#{RDF::Vocab::FOAF.account}> ?account ;
-            <#{MU_CORE.uuid}> ?person_id .
+          ?person <#{RDF::Vocab::FOAF.account}> ?account .
           ?membership <#{ORG.member}> ?person ;
-            <#{MU_CORE.uuid}> ?membership_id ;
-            <#{ORG.organization}> ?organization .
+            <#{MU_CORE.uuid}> ?membership_id .
         }
         GRAPH <#{SYSTEM_USERS_GRAPH}> {
           ?person <#{ADMS.status}> ?person_status .
