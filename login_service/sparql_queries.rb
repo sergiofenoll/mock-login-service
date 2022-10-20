@@ -34,29 +34,16 @@ module LoginService
     def insert_login_activity(user)
       now = DateTime.now
 
+      # Delete old login activity
       query = %(
-      SELECT ?login_activity
-      WHERE {
+      DELETE WHERE {
         GRAPH <#{SYSTEM_USERS_GRAPH}> {
-          ?login_activity a <#{MU_EXT.LoginActivity}> ;
-            <#{PROV.wasAssociatedWith}> <#{user}> .
+          ?s a <#{MU_EXT.LoginActivity}> ;
+            <#{PROV.wasAssociatedWith}> <#{user}> ;
+            ?p ?o .
         }
-      }
-      LIMIT 1)
-
-      result = Mu::AuthSudo.query(query)
-      unless result.empty?
-        login_activity = result.first[:login_activity].to_s
-
-        # Delete old login activity
-        query = %(
-        DELETE WHERE {
-          GRAPH <#{SYSTEM_USERS_GRAPH}> {
-            <#{login_activity}> ?p ?o .
-          }
-        })
-        Mu::AuthSudo.update(query)
-      end
+      })
+      Mu::AuthSudo.update(query)
 
       uuid = generate_uuid
       query = %(
