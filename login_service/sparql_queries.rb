@@ -160,22 +160,5 @@ module LoginService
       query += " } LIMIT 1"
       Mu::AuthSudo.query(query)
     end
-
-    def insert_membership_block(membership)
-      query = %(
-      DELETE WHERE {
-        GRAPH <#{SYSTEM_USERS_GRAPH}> {
-          <#{membership}> <#{ADMS.status}> ?status .
-        }
-      })
-      Mu::AuthSudo.update(query)
-      query = %(
-      INSERT DATA {
-        GRAPH <#{SYSTEM_USERS_GRAPH}> {
-          <#{membership}> <#{ADMS.status}> <#{BLOCKED_STATUS}> .
-        }
-      })
-      Mu::AuthSudo.update(query)
-    end
   end
 end
