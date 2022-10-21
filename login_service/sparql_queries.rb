@@ -31,8 +31,37 @@ module LoginService
       Mu::AuthSudo.update(query)
     end
 
+    def insert_login_activity(user)
+      now = DateTime.now
+
+      # Delete old login activity
+      query = %(
+      DELETE WHERE {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          ?s a <#{MU_EXT.LoginActivity}> ;
+            <#{PROV.wasAssociatedWith}> <#{user}> ;
+            ?p ?o .
+        }
+      })
+      Mu::AuthSudo.update(query)
+
+      uuid = generate_uuid
+      query = %(
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+      INSERT DATA {
+        GRAPH <#{SYSTEM_USERS_GRAPH}> {
+          <#{LOGIN_ACTIVITY_RESOURCE_BASE}#{uuid}> a <#{MU_EXT.LoginActivity}> ;
+            <#{MU_CORE.uuid}> #{uuid.sparql_escape} ;
+            <#{PROV.wasAssociatedWith}> <#{user}> ;
+            <#{PROV.startedAtTime}> #{now.sparql_escape} .
+        }
+      })
+      Mu::AuthSudo.update(query)
+    end
+
     def select_account_by_session(session)
-      query =  " SELECT ?session_id ?account_uri ?account_id ?person_status ?membership_id ?membership_status WHERE {"
+      query =  " SELECT ?session_id ?account_uri ?account_id ?person_uri ?person_status ?membership_id ?membership_status WHERE {"
       query += "   GRAPH <#{SESSIONS_GRAPH}> {"
       query += "     <#{session}> <#{MU_CORE.uuid}> ?session_id;"
       query += "                  <#{MU_SESSION.account}> ?account_uri ;"
@@ -77,16 +106,14 @@ module LoginService
 
     def select_login_data(account_id)
       query = %(
-      SELECT ?account ?person ?person_id ?person_status ?organization ?organization_id ?membership ?membership_id ?membership_status
+      SELECT ?account ?person ?person_status ?membership ?membership_id ?membership_status
       WHERE {
         GRAPH <#{MOCK_ACCOUNT_GRAPH}> {
           ?account a <#{RDF::Vocab::FOAF.OnlineAccount}> ;
             <#{MU_CORE.uuid}> #{account_id.sparql_escape} .
-          ?person <#{RDF::Vocab::FOAF.account}> ?account ;
-            <#{MU_CORE.uuid}> ?person_id .
+          ?person <#{RDF::Vocab::FOAF.account}> ?account .
           ?membership <#{ORG.member}> ?person ;
-            <#{MU_CORE.uuid}> ?membership_id ;
-            <#{ORG.organization}> ?organization .
+            <#{MU_CORE.uuid}> ?membership_id .
         }
         GRAPH <#{SYSTEM_USERS_GRAPH}> {
           ?person <#{ADMS.status}> ?person_status .
@@ -119,23 +146,6 @@ module LoginService
       query += "   }"
       query += " } LIMIT 1"
       Mu::AuthSudo.query(query)
-    end
-
-    def insert_membership_block(membership)
-      query = %(
-      DELETE WHERE {
-        GRAPH <#{SYSTEM_USERS_GRAPH}> {
-          <#{membership}> <#{ADMS.status}> ?status .
-        }
-      })
-      Mu::AuthSudo.update(query)
-      query = %(
-      INSERT DATA {
-        GRAPH <#{SYSTEM_USERS_GRAPH}> {
-          <#{membership}> <#{ADMS.status}> <#{BLOCKED_STATUS}> .
-        }
-      })
-      Mu::AuthSudo.update(query)
     end
   end
 end
