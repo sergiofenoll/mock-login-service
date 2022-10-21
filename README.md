@@ -87,6 +87,8 @@ On successful login with the newly created session in the response body:
 - if session header is missing. The header should be automatically set by the [identifier](https://github.com/mu-semtech/mu-identifier).
 - if the account doesn't exist
 
+###### 401 Forbidden
+- if the user or membership has been blocked
 
 #### DELETE /sessions/current
 Log out the current user, i.e. remove the session associated with the current user's account.

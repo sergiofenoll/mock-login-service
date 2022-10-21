@@ -41,6 +41,7 @@ BLOCKED_STATUS = 'http://themis.vlaanderen.be/id/concept/ffd0d21a-3beb-44c4-b3ff
 # Returns 201 on successful login
 #         400 if session header is missing
 #         400 on login failure (incorrect user/password or inactive account)
+#         403 user account or membership is blocked
 ###
 post '/sessions/' do
   content_type 'application/vnd.api+json'
@@ -179,6 +180,7 @@ end
 #
 # Returns 200 if current session exists
 #         400 if session header is missing or session header is invalid
+#         403 user account or membership is blocked
 ###
 get '/sessions/current/?' do
   content_type 'application/vnd.api+json'
