@@ -242,9 +242,6 @@ INSERT DATA {
     thUser:6b5b3e7c-c6f2-49e9-a10b-a3e3858a1c35 adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
     thMemb:c2b0a9c5-a8d8-4d5e-9c0f-ba32a2fd3d89 adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
 
-    thUser:1a6c420c-e209-46fb-a2cb-cd3aeceec765 adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
-    thMemb:e59daeb0-1c3e-4c47-bdde-c1d7a6e8788d adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
-
     thUser:ab468df5-ceee-4943-8a89-88ac8feebdc7 adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
     thMemb:b32666f4-9641-4abf-a1f6-82b57b322349 adms:status <http://themis.vlaanderen.be/id/concept/43ba4953-3484-4ec7-9741-6e709befc531> .
   }
